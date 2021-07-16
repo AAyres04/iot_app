@@ -35,11 +35,6 @@ export default function Home() {
     );
 }
 
-function getTemperaturaActual(){
-    //to-do: mock
-    return 20;
-}
-
 const styles = StyleSheet.create({
     container: {
         flex: 1,
