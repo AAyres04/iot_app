@@ -20,7 +20,30 @@ export default function Home({navigation}) {
         temperatura: '',
         gasCO2Actual: ''
     });
+    const myUri = "ws://broker.emqx.io:8083/mqtt"
     
+    const clientId = () => {
+        const min = 1;
+        const max = 1000;
+        var rand = Math.floor(min + Math.random() * (max - min)) + 1;
+        var randString = "" + rand
+        return randString;
+    }
+    const topic = "ejemplomqtt/mbaaaam";
+
+    const client = new Client({ uri: myUri, clientId: clientId(), storage: myStorage});
+
+    client.on('connectionLost', (responseObject) => {
+    if (responseObject.errorCode !== 0) {
+        console.log(responseObject.errorMessage);
+    }
+    });
+    client.on('messageReceived', (message) => {
+        //Evento que maneja el mensaje recibido.
+        setMensaje(parseAndSetMqttData(message.payloadString));
+        //parseAndSetMqttData(message.payloadString)
+    });
+
     useEffect(() => {
         client.connect()
         .then(() => {
@@ -34,7 +57,7 @@ export default function Home({navigation}) {
         });
         const interval = setInterval(()=>{
             tickMqttAuxSendData();
-        }, 1000);
+        }, 2000);
         return () => clearInterval(interval);
     }, []);
 
@@ -78,30 +101,6 @@ export default function Home({navigation}) {
         }
         return newMsg;
     }
-
-    const myUri = "ws://broker.emqx.io:8083/mqtt"
-    
-    const clientId = () => {
-        const min = 1;
-        const max = 1000;
-        var rand = Math.floor(min + Math.random() * (max - min)) + 1;
-        var randString = "" + rand
-        return randString;
-    }
-    const topic = "ejemplomqtt/mbaaaam";
-
-    const client = new Client({ uri: myUri, clientId: clientId(), storage: myStorage});
-
-    client.on('connectionLost', (responseObject) => {
-    if (responseObject.errorCode !== 0) {
-        console.log(responseObject.errorMessage);
-    }
-    });
-    client.on('messageReceived', (message) => {
-        //Evento que maneja el mensaje recibido.
-        setMensaje(parseAndSetMqttData(message.payloadString));
-        //parseAndSetMqttData(message.payloadString)
-    });
 
     return (
         <View style={styles.container}>
