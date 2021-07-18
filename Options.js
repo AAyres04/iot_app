@@ -1,7 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import NumericInput from 'react-native-numeric-input'
 
 export default function Home() {
     

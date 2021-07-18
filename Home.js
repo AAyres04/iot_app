@@ -16,57 +16,71 @@ const myStorage = {
 export default function Home({navigation}) {
     const [temperaturaActual, setTemperaturaActual] = useState(0);
     const [gasCO2Actual, setGasCO2Actual] = useState(0);
-    const [mensaje, setMensaje] = useState('');
+    const [mensaje, setMensaje] = useState({
+        temperatura: '',
+        gasCO2Actual: ''
+    });
     
     useEffect(() => {
-        const interval = setInterval(()=>{
-            tickTemp();
-            tickCO2lecture();
-        }, 1000);
         client.connect()
         .then(() => {
-            // Once a connection has been made, make a subscription and send a message.
             console.log('onConnect');
             return client.subscribe(topic);
-        })
-        .then(() => {
-            const message = new Message('Magico');
-            message.destinationName = topic;
-            client.send(message);
         })
         .catch((responseObject) => {
             if (responseObject.errorCode !== 0) {
             console.log('onConnectionLost:' + responseObject.errorMessage);
             }
         });
+        const interval = setInterval(()=>{
+            tickMqttAuxSendData();
+        }, 1000);
         return () => clearInterval(interval);
     }, []);
 
-    const tickTemp = () => {
-        var newTemp = getTemperaturaActual()
-        setTemperaturaActual(newTemp);
-    }
-    const tickCO2lecture = () => {
-        var newCO2lecture = getGasCO2Actual();
-        setGasCO2Actual(newCO2lecture);
+    const tickMqttAuxSendData = () => {
+        //Funcion para enviar los datos generados al topico.
+        //Esta funcion es para simular el envio de datos en la aplicacion, debido a que no se pueden enviar datos desde tinkercad.
+        //StringMessage es una variable auxiliar. En esta se construye el mensaje que la simulacion debiese enviar
+        const stringMessage = 'temperatura:' + getTemperaturaActual() + "\n" + 'ppm:' + getGasCO2Actual()
+        const message = new Message(stringMessage);
+        message.destinationName = topic
+        client.send(message);
     }
 
     const getTemperaturaActual = () => {
-        //to-do: comunicar la aplicacion con tinkercad usando mqtt(?)
-        const min = 1;
-        const max = 100;
-        var rand = min + Math.random() * (max - min);
+        //Como no se puede conectar a la simulacion tinkercad, utilizamos un valor random.
+        const min = 15;
+        const max = 30;
+        var rand = Math.floor(min + Math.random() * (max - min)) + 1;
         return rand;
     }
     const getGasCO2Actual = () => {
-        //to-do: comunicar la aplicacion con tinkercad usando mqtt(?)
-        const min = 1;
-        const max = 100;
-        var rand = min + Math.random() * (max - min);
+        //Como no se puede conectar a la simulacion tinkercad, utilizamos un valor random.
+        const min = 200;
+        const max = 800;
+        var rand = Math.floor(min + Math.random() * (max - min)) + 1;
         return rand;
     }
 
+    const parseAndSetMqttData = (input) => {
+        var partes = input.split('\n');
+        var partesTemperatura = partes[0].split(':');
+        var partesGasCO2Actual = partes[1].split(':');
+        var auxTemp = partesTemperatura[1];
+        var auxGasCO2Actual = partesGasCO2Actual[1]
+        setTemperaturaActual(auxTemp);
+        setGasCO2Actual(auxGasCO2Actual);
+        //Este mensaje es solo para demostracion
+        var newMsg = {
+            temperatura:auxTemp,
+            gasCO2Actual:auxGasCO2Actual
+        }
+        return newMsg;
+    }
+
     const myUri = "ws://broker.emqx.io:8083/mqtt"
+    
     const clientId = () => {
         const min = 1;
         const max = 1000;
@@ -75,17 +89,18 @@ export default function Home({navigation}) {
         return randString;
     }
     const topic = "ejemplomqtt/mbaaaam";
-    // Create a client instance
+
     const client = new Client({ uri: myUri, clientId: clientId(), storage: myStorage});
-    
-    // set event handlers
+
     client.on('connectionLost', (responseObject) => {
     if (responseObject.errorCode !== 0) {
         console.log(responseObject.errorMessage);
     }
     });
     client.on('messageReceived', (message) => {
-        setMensaje(message.payloadString);
+        //Evento que maneja el mensaje recibido.
+        setMensaje(parseAndSetMqttData(message.payloadString));
+        //parseAndSetMqttData(message.payloadString)
     });
 
     return (
@@ -98,9 +113,9 @@ export default function Home({navigation}) {
             <View style={styles.boxTemp}>
                 <Text>{gasCO2Actual}</Text>
             </View>
-            <Text>mensaje</Text>
+            <Text>Mensaje recibido en topico mqtt</Text>
             <View style={styles.boxTemp}>
-                <Text>{mensaje}</Text>
+                <Text>temp: {mensaje.temperatura} {'\n'}ppm: {mensaje.gasCO2Actual}</Text>
             </View>
             <TouchableOpacity
                 style={styles.button}
@@ -122,6 +137,7 @@ const styles = StyleSheet.create({
     },
     boxTemp:{
         flex: 2,
+        maxHeight: 70,
         backgroundColor:'#efefef',
         borderStyle:'solid',
         borderWidth: 1,
