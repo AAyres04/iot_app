@@ -57,10 +57,7 @@ export default function Home({navigation}) {
             console.log('onConnectionLost:' + responseObject.errorMessage);
             }
         });
-        const interval = setInterval(()=>{
-            tickMqttAuxSendData();
-        }, 2000);
-        return () => clearInterval(interval);
+        return () => null;
     }, []);
 
     //Funcion que parsea los datos recibidos del mensaje mqtt.
@@ -79,35 +76,7 @@ export default function Home({navigation}) {
         }
         return newMsg;
     }
-
-    //Funcion auxiliar para enviar los datos generados al topico.
-    const tickMqttAuxSendData = () => {
-        //Esta funcion es para simular el envio de datos en la aplicacion, debido a que no se pueden enviar datos desde tinkercad.
-        //StringMessage es una variable auxiliar. En esta se construye el mensaje que la simulacion debiese enviar
-        const stringMessage = 'temperatura:' + getTemperaturaActual() + "\n" + 'ppm:' + getGasCO2Actual()
-        const message = new Message(stringMessage);
-        message.destinationName = topic
-        client.send(message);
-    }
-
-    //Funcion auxiliar para generar el valor temperatura.
-    const getTemperaturaActual = () => {
-        //Como no se puede conectar a la simulacion tinkercad, utilizamos un valor random.
-        const min = 15;
-        const max = 30;
-        var rand = Math.floor(min + Math.random() * (max - min)) + 1;
-        return rand;
-    }
-
-    //Funcion auxiliar para generar el valor CO2.
-    const getGasCO2Actual = () => {
-        //Como no se puede conectar a la simulacion tinkercad, utilizamos un valor random.
-        const min = 200;
-        const max = 800;
-        var rand = Math.floor(min + Math.random() * (max - min)) + 1;
-        return rand;
-    }
-
+    
     return (
         <View style={styles.container}>
             <Text>Temperatura actual</Text>
